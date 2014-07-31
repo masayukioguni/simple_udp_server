@@ -1,21 +1,14 @@
 package main
 
 import (
+	"./payload"
 	"fmt"
 	"log"
 	"net"
 	"time"
 )
 
-type payload struct {
-	addr         *net.UDPAddr
-	conn         *net.UDPConn
-	buffer       []byte
-	bufferLength int
-	err          error
-}
-
-func loopToReadPayload(payloadChannel chan *payload,
+func receivePayload(payloadChannel chan *payload.Payload,
 	udpConn *net.UDPConn) error {
 	for {
 		buffer := make([]byte, 1400)
@@ -26,12 +19,13 @@ func loopToReadPayload(payloadChannel chan *payload,
 			continue
 		}
 
-		currentPayload := new(payload)
-		currentPayload.addr = udpAddr
-		currentPayload.conn = udpConn
-		currentPayload.buffer = buffer
-		currentPayload.bufferLength = bufferLength
-		log.Println("loopToReadPayload currentPayload:", currentPayload)
+		currentPayload := new(payload.Payload)
+
+		currentPayload.Addr = udpAddr
+		currentPayload.Conn = udpConn
+		currentPayload.Buffer = buffer
+		currentPayload.BufferLength = bufferLength
+		log.Println("receivePayload currentPayload:", currentPayload)
 
 		payloadChannel <- currentPayload
 	}
@@ -39,11 +33,10 @@ func loopToReadPayload(payloadChannel chan *payload,
 	return nil
 }
 
-func loopToHandlePayload(payloadChannel chan *payload) error {
+func processPayload(payloadChannel chan *payload.Payload) error {
 	for {
 		currentPayload := <-payloadChannel
-		log.Println("loopToHandlePayload currentPayload:", currentPayload)
-
+		log.Println("processPayload currentPayload:", currentPayload)
 	}
 
 	return nil
@@ -66,13 +59,14 @@ func StartUdpServer(udpPort int) error {
 
 	log.Println("net.ListenUDP:", udpConn)
 
-	udpConn.SetReadBuffer(20000000)
-	udpConn.SetWriteBuffer(20000000)
+	const bufferSize int = 1 * 1024 * 1024
+	udpConn.SetReadBuffer(bufferSize)
+	udpConn.SetWriteBuffer(bufferSize)
 
-	payloadChannel := make(chan *payload)
+	payloadChannel := make(chan *payload.Payload)
 
-	go loopToReadPayload(payloadChannel, udpConn)
-	go loopToHandlePayload(payloadChannel)
+	go receivePayloadProcess(payloadChannel, udpConn)
+	go processPayload(payloadChannel)
 
 	return nil
 }
