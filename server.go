@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func receivePayload(payloadChannel chan *payload.Payload,
+func receivePayloadProcess(payloadChannel chan *payload.Payload,
 	udpConn *net.UDPConn) error {
 	for {
 		buffer := make([]byte, 1400)
@@ -25,7 +25,7 @@ func receivePayload(payloadChannel chan *payload.Payload,
 		currentPayload.Conn = udpConn
 		currentPayload.Buffer = buffer
 		currentPayload.BufferLength = bufferLength
-		log.Println("receivePayload currentPayload:", currentPayload)
+		//log.Println("receivePayload currentPayload:", currentPayload.Buffer[0])
 
 		payloadChannel <- currentPayload
 	}
@@ -36,7 +36,8 @@ func receivePayload(payloadChannel chan *payload.Payload,
 func processPayload(payloadChannel chan *payload.Payload) error {
 	for {
 		currentPayload := <-payloadChannel
-		log.Println("processPayload currentPayload:", currentPayload)
+		//log.Println("processPayload currentPayload:", currentPayload)
+		log.Println("currentPayload.buffer:%04hX ", currentPayload.Buffer[0:1])
 	}
 
 	return nil
