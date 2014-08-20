@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./binary_coded_decimal"
 	"./payload"
 	"fmt"
 	"log"
@@ -33,15 +34,6 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 	return nil
 }
 
-func IntToBcd(value int) int {
-	bcd := (((value / 10) % 10) << 4) | (value % 10)
-	return bcd
-}
-
-func bcdToInt(value int) int {
-	return (int)((value>>4)*10 + (value & 0x0F))
-}
-
 func processPayload(payloadChannel chan *payload.Payload) error {
 	for {
 		currentPayload := <-payloadChannel
@@ -52,12 +44,12 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 		length := currentPayload.Buffer[3:5]
 		bcddate := currentPayload.Buffer[5:11]
 
-		year := bcdToInt(int(bcddate[0]))
-		month := bcdToInt(int(bcddate[1]))
-		day := bcdToInt(int(bcddate[2]))
-		hour := bcdToInt(int(bcddate[3]))
-		minute := bcdToInt(int(bcddate[4]))
-		second := bcdToInt(int(bcddate[5]))
+		year := binary_coded_decimal.BcdToInt(int(bcddate[0]))
+		month := binary_coded_decimal.BcdToInt(int(bcddate[1]))
+		day := binary_coded_decimal.BcdToInt(int(bcddate[2]))
+		hour := binary_coded_decimal.BcdToInt(int(bcddate[3]))
+		minute := binary_coded_decimal.BcdToInt(int(bcddate[4]))
+		second := binary_coded_decimal.BcdToInt(int(bcddate[5]))
 
 		ch := currentPayload.Buffer[11:13]
 		size := currentPayload.Buffer[13] >> 4

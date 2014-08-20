@@ -11,8 +11,3 @@ type Payload struct {
 	BufferLength int
 	Err          error
 }
-
-type Test struct {
-	Name  string // オブジェクトの名前
-	Value int    // その値
-}
