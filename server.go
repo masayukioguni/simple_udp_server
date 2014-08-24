@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./binary_coded_decimal"
+	"./bcd"
 	"./payload"
 	"fmt"
 	"log"
@@ -44,12 +44,12 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 		length := currentPayload.Buffer[3:5]
 		bcddate := currentPayload.Buffer[5:11]
 
-		year := binary_coded_decimal.BcdToInt(int(bcddate[0]))
-		month := binary_coded_decimal.BcdToInt(int(bcddate[1]))
-		day := binary_coded_decimal.BcdToInt(int(bcddate[2]))
-		hour := binary_coded_decimal.BcdToInt(int(bcddate[3]))
-		minute := binary_coded_decimal.BcdToInt(int(bcddate[4]))
-		second := binary_coded_decimal.BcdToInt(int(bcddate[5]))
+		year := bcd.BcdToInt(int(bcddate[0]))
+		month := bcd.BcdToInt(int(bcddate[1]))
+		day := bcd.BcdToInt(int(bcddate[2]))
+		hour := bcd.BcdToInt(int(bcddate[3]))
+		minute := bcd.BcdToInt(int(bcddate[4]))
+		second := bcd.BcdToInt(int(bcddate[5]))
 
 		ch := currentPayload.Buffer[11:13]
 		size := currentPayload.Buffer[13] >> 4

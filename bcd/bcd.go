@@ -1,4 +1,4 @@
-package binary_coded_decimal
+package bcd
 
 func IntToBcd(value int) int {
 	return (((value / 10) % 10) << 4) | (value % 10)
