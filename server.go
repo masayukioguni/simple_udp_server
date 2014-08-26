@@ -3,7 +3,7 @@ package main
 import (
 	//"./bcd"
 	"./payload"
-	"./win"
+	"./winformat"
 	"fmt"
 	"log"
 	"net"
@@ -38,8 +38,8 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 func processPayload(payloadChannel chan *payload.Payload) error {
 	for {
 		currentPayload := <-payloadChannel
-		Winformat := &win.WinFormat{}
-		Winformat = win.Parse(currentPayload.Buffer)
+		Winformat := &winformat.WinFormat{}
+		Winformat = winformat.Parse(currentPayload.Buffer)
 		fmt.Printf("%0x%0x\n", Winformat.Sequence, Winformat.SubSequence)
 		//log.Println("processPayload currentPayload:", currentPayload)
 		//log.Println("currentPayload.buffer:%04hX ", currentPayload.Buffer[0:1])
