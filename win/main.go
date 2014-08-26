@@ -5,43 +5,25 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	//"time"
+	"strconv"
 )
 
-type WinDatetime struct {
-	year   uint8
-	month  uint8
-	day    uint8
-	hour   uint8
-	minute uint8
-	second uint8
-}
-
 type WinFormat struct {
-	Sequence      uint8
-	SubSequence   uint8
-	A0            byte
-	length        uint16
-	datetime      WinDatetime
-	year          byte
-	month         byte
-	day           byte
-	hour          byte
-	minute        byte
-	second        byte
-	channel       uint16
-	ChannelStatus uint16
-	FirstSample   uint32
-	Sampling      []int32
-
-	/*
-		length       int
-		Time         time.Time
-		Channel      string
-		SamplingSize int
-		SamplingRate int
-		Buffer       []byte
-	*/
+	Sequence    uint8
+	SubSequence uint8
+	A0          byte
+	length      uint16
+	year        byte
+	month       byte
+	day         byte
+	hour        byte
+	minute      byte
+	second      byte
+	channel     uint16
+	rate        byte
+	size        byte
+	FirstSample int32
+	Sampling    []int32
 }
 
 func Parse(buffer []byte) *WinFormat {
@@ -58,12 +40,17 @@ func Parse(buffer []byte) *WinFormat {
 	binary.Read(buf, binary.BigEndian, &winformat.minute)
 	binary.Read(buf, binary.BigEndian, &winformat.second)
 	binary.Read(buf, binary.BigEndian, &winformat.channel)
-	binary.Read(buf, binary.BigEndian, &winformat.ChannelStatus)
+	binary.Read(buf, binary.BigEndian, &winformat.size)
+	binary.Read(buf, binary.BigEndian, &winformat.rate)
+
 	binary.Read(buf, binary.BigEndian, &winformat.FirstSample)
 
-	winformat.Sampling = make([]int32, 100)
+	size := winformat.size >> 4
+	rate := (winformat.size&0x0f)<<8 | winformat.rate&0xff
 
-	fmt.Printf("%0x%0x %X %04X %02d%02d%02d%02d%02d%02d %04X %04X %08X\n", winformat.Sequence,
+	winformat.Sampling = make([]int32, rate-1)
+
+	fmt.Printf("%0X%0X %X %04X %02d%02d%02d%02d%02d%02d %04X %02X%02X(%d %d) %08X\n", winformat.Sequence,
 		winformat.SubSequence,
 		int(winformat.A0),
 		winformat.length,
@@ -74,29 +61,52 @@ func Parse(buffer []byte) *WinFormat {
 		bcd.BcdToInt(int(winformat.minute)),
 		bcd.BcdToInt(int(winformat.second)),
 		winformat.channel,
-		winformat.ChannelStatus,
+		winformat.size,
+		winformat.rate,
+		size,
+		rate,
 		winformat.FirstSample,
 	)
 
-	/*
-		seq, err := binary.ReadVarint(buf)
-		winformat.Sequence = int(seq)
+	if size == 0 {
+		rate = rate / 2
 
-		A0 := buffer[2:3]
-		length := buffer[3:5]
-		bcddate := buffer[5:11]
-		year := bcd.BcdToInt(int(bcddate[0]))
-		month := bcd.BcdToInt(int(bcddate[1]))
-		day := bcd.BcdToInt(int(bcddate[2]))
-		hour := bcd.BcdToInt(int(bcddate[3]))
-		minute := bcd.BcdToInt(int(bcddate[4]))
-		second := bcd.BcdToInt(int(bcddate[5]))
+	}
 
-		ch := buffer[11:13]
-		size := buffer[13] >> 4
-		rate := (buffer[13]&0x0f)<<8 | buffer[14]&0xff
+	for i := 0; i < int(rate)-1; i++ {
+		if size == 4 {
+			var value int32
+			binary.Read(buf, binary.BigEndian, &value)
+			winformat.Sampling[i] = value
+		}
+		if size == 3 {
+			value := make([]byte, 3)
+			binary.Read(buf, binary.BigEndian, &value)
+			num, _ := strconv.ParseInt(fmt.Sprintf("%x%x%x", value[0], value[1], value[2]), 16, 32)
+			winformat.Sampling[i] = int32(num)
+		}
+		if size == 2 {
+			var value int16
+			binary.Read(buf, binary.BigEndian, &value)
+			winformat.Sampling[i] = int32(value)
 
-		firstSample := buffer[15:19]
-	*/
+		}
+		if size == 1 {
+			var value int8
+			binary.Read(buf, binary.BigEndian, &value)
+			winformat.Sampling[i] = int32(value)
+
+		}
+		if size == 0 {
+			var value int8
+			binary.Read(buf, binary.BigEndian, &value)
+			winformat.Sampling[i] = int32(value)
+			//fmt.Printf("%d %x %x%x \n", i, value, winformat.Sampling[i]&0xf0, (winformat.Sampling[i])&0x0f)
+		}
+	}
+
+	for i := 0; i < int(rate)-1; i++ {
+		fmt.Printf("%d %x\n", i, winformat.Sampling[i])
+	}
 	return &winformat
 }
