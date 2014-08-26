@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./bcd"
+	//"./bcd"
 	"./payload"
 	"./win"
 	"fmt"
@@ -43,28 +43,30 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 		fmt.Printf("%0x%0x\n", Winformat.Sequence, Winformat.SubSequence)
 		//log.Println("processPayload currentPayload:", currentPayload)
 		//log.Println("currentPayload.buffer:%04hX ", currentPayload.Buffer[0:1])
-		seq := currentPayload.Buffer[0:2]
-		A0 := currentPayload.Buffer[2:3]
-		length := currentPayload.Buffer[3:5]
-		bcddate := currentPayload.Buffer[5:11]
+		/*
+			seq := currentPayload.Buffer[0:2]
+			A0 := currentPayload.Buffer[2:3]
+			length := currentPayload.Buffer[3:5]
+			bcddate := currentPayload.Buffer[5:11]
 
-		year := bcd.BcdToInt(int(bcddate[0]))
-		month := bcd.BcdToInt(int(bcddate[1]))
-		day := bcd.BcdToInt(int(bcddate[2]))
-		hour := bcd.BcdToInt(int(bcddate[3]))
-		minute := bcd.BcdToInt(int(bcddate[4]))
-		second := bcd.BcdToInt(int(bcddate[5]))
+			year := bcd.BcdToInt(int(bcddate[0]))
+			month := bcd.BcdToInt(int(bcddate[1]))
+			day := bcd.BcdToInt(int(bcddate[2]))
+			hour := bcd.BcdToInt(int(bcddate[3]))
+			minute := bcd.BcdToInt(int(bcddate[4]))
+			second := bcd.BcdToInt(int(bcddate[5]))
 
-		ch := currentPayload.Buffer[11:13]
-		size := currentPayload.Buffer[13] >> 4
-		rate := (currentPayload.Buffer[13]&0x0f)<<8 | currentPayload.Buffer[14]&0xff
+			ch := currentPayload.Buffer[11:13]
+			size := currentPayload.Buffer[13] >> 4
+			rate := (currentPayload.Buffer[13]&0x0f)<<8 | currentPayload.Buffer[14]&0xff
 
-		firstSample := currentPayload.Buffer[15:19]
+			firstSample := currentPayload.Buffer[15:19]
 
-		//startPos := 19
+			//startPos := 19
 
-		datetime := fmt.Sprintf("%02d%02d%02d%02d%02d%02d", year, month, day, hour, minute, second)
-		fmt.Printf("%04X %X %X %s %04X %d %d %08X\n", seq, A0, length, datetime, ch, size, rate, firstSample)
+			datetime := fmt.Sprintf("%02d%02d%02d%02d%02d%02d", year, month, day, hour, minute, second)
+			fmt.Printf("%04X %X %X %s %04X %d %d %08X\n", seq, A0, length, datetime, ch, size, rate, firstSample)
+		*/
 		/*
 			if size == 0 {
 				rate = rate / 2
