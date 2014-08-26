@@ -3,6 +3,7 @@ package main
 import (
 	"./bcd"
 	"./payload"
+	"./win"
 	"fmt"
 	"log"
 	"net"
@@ -37,6 +38,9 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 func processPayload(payloadChannel chan *payload.Payload) error {
 	for {
 		currentPayload := <-payloadChannel
+		Winformat := &win.WinFormat{}
+		Winformat = win.Parse(currentPayload.Buffer)
+		fmt.Printf("%0x%0x\n", Winformat.Sequence, Winformat.SubSequence)
 		//log.Println("processPayload currentPayload:", currentPayload)
 		//log.Println("currentPayload.buffer:%04hX ", currentPayload.Buffer[0:1])
 		seq := currentPayload.Buffer[0:2]
@@ -57,59 +61,58 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 
 		firstSample := currentPayload.Buffer[15:19]
 
-		startPos := 19
+		//startPos := 19
 
 		datetime := fmt.Sprintf("%02d%02d%02d%02d%02d%02d", year, month, day, hour, minute, second)
-
 		fmt.Printf("%04X %X %X %s %04X %d %d %08X\n", seq, A0, length, datetime, ch, size, rate, firstSample)
-
-		if size == 0 {
-			rate = rate / 2
-
-		}
-
-		for i := 0; i < int(rate)-1; i++ {
-			if size == 4 {
-				s := int(startPos + (i * 4))
-				e := int(startPos + (i * 4) + 4)
-
-				diff := currentPayload.Buffer[s:e]
-				fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
-			}
-			if size == 3 {
-				s := int(startPos + (i * 3))
-				e := int(startPos + (i * 3) + 3)
-
-				diff := currentPayload.Buffer[s:e]
-				fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
-			}
-
-			if size == 2 {
-				s := int(startPos + (i * 2))
-				e := int(startPos + (i * 2) + 2)
-
-				diff := currentPayload.Buffer[s:e]
-				fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
-			}
-
-			if size == 1 {
-				s := int(startPos + (i * 1))
-				e := int(startPos + (i * 1) + 1)
-
-				diff := currentPayload.Buffer[s:e]
-				fmt.Printf("s:%d e:%d index:%d %X\n", s-19, e-19, i, diff)
-			}
-
+		/*
 			if size == 0 {
-				s := int(startPos + (i * 1))
-				e := int(startPos + (i * 1) + 1)
-
-				diff := currentPayload.Buffer[s:e]
-				fmt.Printf("s:%d e:%d index:%d %X\n", s-19, e-19, i, diff)
+				rate = rate / 2
 
 			}
-		}
 
+			for i := 0; i < int(rate)-1; i++ {
+				if size == 4 {
+					s := int(startPos + (i * 4))
+					e := int(startPos + (i * 4) + 4)
+
+					diff := currentPayload.Buffer[s:e]
+					fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
+				}
+				if size == 3 {
+					s := int(startPos + (i * 3))
+					e := int(startPos + (i * 3) + 3)
+
+					diff := currentPayload.Buffer[s:e]
+					fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
+				}
+
+				if size == 2 {
+					s := int(startPos + (i * 2))
+					e := int(startPos + (i * 2) + 2)
+
+					diff := currentPayload.Buffer[s:e]
+					fmt.Printf("s:%d e:%d index:%d %04X\n", s-19, e-19, i, diff)
+				}
+
+				if size == 1 {
+					s := int(startPos + (i * 1))
+					e := int(startPos + (i * 1) + 1)
+
+					diff := currentPayload.Buffer[s:e]
+					fmt.Printf("s:%d e:%d index:%d %X\n", s-19, e-19, i, diff)
+				}
+
+				if size == 0 {
+					s := int(startPos + (i * 1))
+					e := int(startPos + (i * 1) + 1)
+
+					diff := currentPayload.Buffer[s:e]
+					fmt.Printf("s:%d e:%d index:%d %X\n", s-19, e-19, i, diff)
+
+				}
+			}
+		*/
 	}
 
 	return nil
