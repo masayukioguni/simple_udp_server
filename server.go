@@ -2,12 +2,12 @@ package main
 
 import (
 	"./payload"
+	"encoding/json"
 	"fmt"
 	"github.com/masayukioguni/winformat"
 	"github.com/t-k/fluent-logger-golang/fluent"
 	"log"
 	"net"
-	"strconv"
 	"time"
 )
 
@@ -44,17 +44,8 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 
 	for {
 		currentPayload := <-payloadChannel
-
-		win := winformat.Parse(currentPayload.Buffer)
-
-		var data = map[string]string{
-			"sequence":     strconv.Itoa(win.GetSequence()),
-			"subsequence":  strconv.Itoa(win.GetSubSequence()),
-			"channel":      strconv.Itoa(win.GetChannel()),
-			"samplig_rate": strconv.Itoa(win.GetSamplingRate()),
-			"samplig_size": strconv.Itoa(win.GetSamplingSize()),
-		}
-		logger.Post(tag, data)
+		jsonData, _ := json.Marshal(winformat.NewWinFormat(currentPayload.Buffer))
+		logger.Post(tag, jsonData)
 	}
 	return nil
 }
