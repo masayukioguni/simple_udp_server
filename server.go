@@ -11,14 +11,6 @@ import (
 	"time"
 )
 
-type Payload struct {
-	Addr         *net.UDPAddr
-	Conn         *net.UDPConn
-	Buffer       []byte
-	BufferLength int
-	Err          error
-}
-
 const (
 	defaultPort       = 9229
 	defaultFluentHost = "127.0.0.1"
@@ -26,6 +18,13 @@ const (
 	defaultBufferSize = 1 * 1024 * 1024
 	defaultTagName    = "debug.format"
 )
+
+type Payload struct {
+	Addr         *net.UDPAddr
+	Conn         *net.UDPConn
+	Buffer       []byte
+	BufferLength int
+}
 
 type Config struct {
 	Port       int
@@ -87,8 +86,7 @@ func (s *Server) start() (err error) {
 	return err
 }
 
-func receivePayloadProcess(payloadChannel chan *Payload,
-	s *Server) error {
+func receivePayloadProcess(payloadChannel chan *Payload, s *Server) error {
 	for {
 		buffer := make([]byte, 1400)
 
@@ -98,11 +96,12 @@ func receivePayloadProcess(payloadChannel chan *Payload,
 			continue
 		}
 
-		currentPayload := new(Payload)
-		currentPayload.Addr = udpAddr
-		currentPayload.Conn = s.conn
-		currentPayload.Buffer = buffer
-		currentPayload.BufferLength = bufferLength
+		currentPayload := &Payload{
+			Addr:         udpAddr,
+			Conn:         s.conn,
+			Buffer:       buffer,
+			BufferLength: bufferLength,
+		}
 
 		payloadChannel <- currentPayload
 	}
