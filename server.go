@@ -17,7 +17,7 @@ const (
 	defaultFluentHost = "127.0.0.1"
 	defaultFluentPort = 24224
 	defaultBufferSize = 1 * 1024 * 1024
-	defaultTagName    = "win.format"
+	defaultTagName    = "debug.format"
 )
 
 type Config struct {
@@ -105,53 +105,23 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 
 func processPayload(payloadChannel chan *payload.Payload, s *Server) error {
 
-	logger, err := fluent.New(fluent.Config{FluentPort: s.Config.FluentPort, FluentHost: s.Config.FluentHost})
+	logger, err := fluent.New(fluent.Config{
+		FluentPort: s.Config.FluentPort,
+		FluentHost: s.Config.FluentHost})
+
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 	defer logger.Close()
 
-	tag := "debug.access"
-
 	for {
 		currentPayload := <-payloadChannel
 		jsonData, _ := json.Marshal(winformat.NewWinFormat(currentPayload.Buffer))
-		logger.Post(tag, jsonData)
+		logger.Post(s.Config.TagName, jsonData)
 	}
 	return nil
 }
-
-/*
-func StartUdpServer(udpPort int) error {
-	log.Println("Trying to start UDP server port:", udpPort)
-
-	udpServerAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", udpPort))
-	if err != nil {
-		log.Println("ResolveUDPAddr:", err)
-		return err
-	}
-	log.Println("net.ResolveUDPAddr:", udpServerAddr)
-
-	udpConn, err := net.ListenUDP("udp", udpServerAddr)
-	if err != nil {
-		return err
-	}
-
-	log.Println("net.ListenUDP:", udpConn)
-
-	const bufferSize int = 1 * 1024 * 1024
-	udpConn.SetReadBuffer(bufferSize)
-	udpConn.SetWriteBuffer(bufferSize)
-
-	payloadChannel := make(chan *payload.Payload)
-
-	go receivePayloadProcess(payloadChannel, udpConn)
-	go processPayload(payloadChannel)
-
-	return nil
-}
-*/
 
 func main() {
 	server, _ := New(Config{})
