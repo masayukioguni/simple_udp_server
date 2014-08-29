@@ -8,8 +8,53 @@ import (
 	"github.com/t-k/fluent-logger-golang/fluent"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
+
+const (
+	defaultPort       = 9229
+	defaultFluentHost = "127.0.0.1"
+	defaultFluentPort = 24224
+	defaultWindowSize = 1 * 1024 * 1024
+	defaultTagName    = "win.format"
+)
+
+type Config struct {
+	Port       int
+	FluentHost string
+	FluentPort int
+	WindowSize int
+	TagName    string
+}
+
+type Server struct {
+	Config  Config
+	conn    net.Conn
+	pending []byte
+	mutex   sync.Mutex
+}
+
+func New(config Config) (s *Server, err error) {
+	if config.Port == 0 {
+		config.Port = defaultPort
+	}
+	if config.FluentHost == "" {
+		config.FluentHost = defaultFluentHost
+	}
+	if config.FluentPort == 0 {
+		config.FluentPort = defaultFluentPort
+	}
+	if config.TagName == "" {
+		config.TagName = defaultTagName
+	}
+
+	if config.WindowSize == 0 {
+		config.WindowSize = defaultWindowSize
+	}
+	f = &Server{Config: config}
+
+}
 
 func receivePayloadProcess(payloadChannel chan *payload.Payload,
 	udpConn *net.UDPConn) error {
