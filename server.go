@@ -16,7 +16,7 @@ const (
 	defaultPort       = 9229
 	defaultFluentHost = "127.0.0.1"
 	defaultFluentPort = 24224
-	defaultWindowSize = 1 * 1024 * 1024
+	defaultBufferSize = 1 * 1024 * 1024
 	defaultTagName    = "win.format"
 )
 
@@ -24,13 +24,13 @@ type Config struct {
 	Port       int
 	FluentHost string
 	FluentPort int
-	WindowSize int
+	BufferSize int
 	TagName    string
 }
 
 type Server struct {
 	Config  Config
-	conn    net.Conn
+	conn    *net.UDPConn
 	pending []byte
 	mutex   sync.Mutex
 }
@@ -48,20 +48,44 @@ func New(config Config) (s *Server, err error) {
 	if config.TagName == "" {
 		config.TagName = defaultTagName
 	}
-
-	if config.WindowSize == 0 {
-		config.WindowSize = defaultWindowSize
+	if config.BufferSize == 0 {
+		config.BufferSize = defaultBufferSize
 	}
-	f = &Server{Config: config}
+	s = &Server{Config: config}
+	return s, err
+}
 
+func (s *Server) start() (err error) {
+	config := &s.Config
+	udpServerAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", config.Port))
+	if err != nil {
+		log.Println("ResolveUDPAddr:", err)
+		return err
+	}
+
+	s.conn, err = net.ListenUDP("udp", udpServerAddr)
+	if err != nil {
+		log.Println("ListenUDP:", err)
+		return err
+	}
+
+	s.conn.SetReadBuffer(config.BufferSize)
+	s.conn.SetWriteBuffer(config.BufferSize)
+
+	payloadChannel := make(chan *payload.Payload)
+
+	go receivePayloadProcess(payloadChannel, s)
+	go processPayload(payloadChannel, s)
+
+	return err
 }
 
 func receivePayloadProcess(payloadChannel chan *payload.Payload,
-	udpConn *net.UDPConn) error {
+	s *Server) error {
 	for {
 		buffer := make([]byte, 1400)
 
-		bufferLength, udpAddr, err := udpConn.ReadFromUDP(buffer)
+		bufferLength, udpAddr, err := s.conn.ReadFromUDP(buffer)
 		if err != nil {
 			log.Println("Failed udpConn.ReadFromUDP():", err)
 			continue
@@ -69,7 +93,7 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 
 		currentPayload := new(payload.Payload)
 		currentPayload.Addr = udpAddr
-		currentPayload.Conn = udpConn
+		currentPayload.Conn = s.conn
 		currentPayload.Buffer = buffer
 		currentPayload.BufferLength = bufferLength
 
@@ -79,12 +103,15 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 	return nil
 }
 
-func processPayload(payloadChannel chan *payload.Payload) error {
-	logger, err := fluent.New(fluent.Config{FluentPort: 24224, FluentHost: "127.0.0.1"})
+func processPayload(payloadChannel chan *payload.Payload, s *Server) error {
+
+	logger, err := fluent.New(fluent.Config{FluentPort: s.Config.FluentPort, FluentHost: s.Config.FluentHost})
 	if err != nil {
 		fmt.Println(err)
+		return err
 	}
 	defer logger.Close()
+
 	tag := "debug.access"
 
 	for {
@@ -95,6 +122,7 @@ func processPayload(payloadChannel chan *payload.Payload) error {
 	return nil
 }
 
+/*
 func StartUdpServer(udpPort int) error {
 	log.Println("Trying to start UDP server port:", udpPort)
 
@@ -123,8 +151,10 @@ func StartUdpServer(udpPort int) error {
 
 	return nil
 }
+*/
 
 func main() {
-	StartUdpServer(9229)
+	server, _ := New(Config{})
+	server.start()
 	time.Sleep(1000000000 * time.Second)
 }
