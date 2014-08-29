@@ -7,8 +7,9 @@ import (
 	"github.com/t-k/fluent-logger-golang/fluent"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"sync"
-	"time"
 )
 
 const (
@@ -125,6 +126,7 @@ func processPayload(payloadChannel chan *Payload, s *Server) error {
 		currentPayload := <-payloadChannel
 		jsonData, _ := json.Marshal(winformat.NewWinFormat(currentPayload.Buffer))
 		logger.Post(s.Config.TagName, jsonData)
+
 	}
 	return nil
 }
@@ -132,5 +134,9 @@ func processPayload(payloadChannel chan *Payload, s *Server) error {
 func main() {
 	server, _ := New(Config{})
 	server.start()
-	time.Sleep(1000000000 * time.Second)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	_ = <-c
 }
