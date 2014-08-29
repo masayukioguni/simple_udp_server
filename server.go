@@ -1,7 +1,6 @@
 package main
 
 import (
-	"./payload"
 	"encoding/json"
 	"fmt"
 	"github.com/masayukioguni/winformat"
@@ -11,6 +10,14 @@ import (
 	"sync"
 	"time"
 )
+
+type Payload struct {
+	Addr         *net.UDPAddr
+	Conn         *net.UDPConn
+	Buffer       []byte
+	BufferLength int
+	Err          error
+}
 
 const (
 	defaultPort       = 9229
@@ -72,7 +79,7 @@ func (s *Server) start() (err error) {
 	s.conn.SetReadBuffer(config.BufferSize)
 	s.conn.SetWriteBuffer(config.BufferSize)
 
-	payloadChannel := make(chan *payload.Payload)
+	payloadChannel := make(chan *Payload)
 
 	go receivePayloadProcess(payloadChannel, s)
 	go processPayload(payloadChannel, s)
@@ -80,7 +87,7 @@ func (s *Server) start() (err error) {
 	return err
 }
 
-func receivePayloadProcess(payloadChannel chan *payload.Payload,
+func receivePayloadProcess(payloadChannel chan *Payload,
 	s *Server) error {
 	for {
 		buffer := make([]byte, 1400)
@@ -91,7 +98,7 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 			continue
 		}
 
-		currentPayload := new(payload.Payload)
+		currentPayload := new(Payload)
 		currentPayload.Addr = udpAddr
 		currentPayload.Conn = s.conn
 		currentPayload.Buffer = buffer
@@ -103,7 +110,7 @@ func receivePayloadProcess(payloadChannel chan *payload.Payload,
 	return nil
 }
 
-func processPayload(payloadChannel chan *payload.Payload, s *Server) error {
+func processPayload(payloadChannel chan *Payload, s *Server) error {
 
 	logger, err := fluent.New(fluent.Config{
 		FluentPort: s.Config.FluentPort,
