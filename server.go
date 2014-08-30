@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/masayukioguni/winformat"
 	"github.com/t-k/fluent-logger-golang/fluent"
@@ -120,6 +121,7 @@ func processPayload(payloadChannel chan *Payload, s *Server) error {
 		fmt.Println(err)
 		return err
 	}
+
 	defer logger.Close()
 
 	for {
@@ -131,8 +133,47 @@ func processPayload(payloadChannel chan *Payload, s *Server) error {
 	return nil
 }
 
+// help text
+const (
+	help_text       string = `Usage: server [OPTIONS]`
+	version_text    string = `server ` + Version
+	port_text       string = ``
+	fluentport_text string = ``
+	fluenthost_text string = ``
+	tagname_text    string = ``
+	bufferSize_text string = ``
+)
+
+// need prefix?
+var (
+	help       = flag.Bool("help", false, help_text)
+	version    = flag.Bool("version", false, version_text)
+	port       = flag.Int("port", defaultPort, port_text)
+	fluentPort = flag.Int("fluent_port", defaultFluentPort, fluentport_text)
+	fluentHost = flag.String("fluent_host", defaultFluentHost, fluenthost_text)
+	tagName    = flag.String("tag_name", defaultTagName, tagname_text)
+	bufferSize = flag.Int("buffer_size", defaultBufferSize, bufferSize_text)
+)
+
 func main() {
-	server, _ := New(Config{})
+	flag.Parse()
+	if *help {
+		fmt.Println(help_text)
+		os.Exit(0)
+	}
+	if *version {
+		fmt.Println(version_text)
+		os.Exit(0)
+	}
+
+	server, _ := New(Config{
+		Port:       *port,
+		FluentPort: *fluentPort,
+		FluentHost: *fluentHost,
+		TagName:    *tagName,
+		BufferSize: *bufferSize,
+	})
+
 	server.start()
 
 	c := make(chan os.Signal, 1)
